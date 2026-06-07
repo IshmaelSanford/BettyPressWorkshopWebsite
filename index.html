@@ -42,6 +42,7 @@
         <a href="#overview">Overview</a>
         <a href="#schedule">Schedule</a>
         <a href="#details">Details</a>
+        <a href="#locations">Locations</a>
         <a href="#register" class="site-nav__cta">Register</a>
       </nav>
     </div>
@@ -76,15 +77,19 @@
       </div>
     </section>
 
-    <section class="halftone-section section section--earth section--tall" id="halftone" aria-label="Animated halftone study">
-      <div class="halftone-section__stage">
+    <div class="section-divider section-divider--tone-warm" data-section-divider-reveal data-tone-above="dark" data-tone-below="light" aria-hidden="true">
+      <div class="section-divider__art"></div>
+    </div>
+
+    <section class="halftone-section section section--earth section--tall" id="halftone" data-baked-src="img/cow-halftone.mp4?v=2" aria-label="Animated halftone study">
+      <div class="halftone-section__stage" data-parallax="12">
         <video
           class="halftone-video__baked"
-          src="img/cow-halftone.mp4"
+          data-src="img/cow-halftone.mp4?v=2"
           muted
           loop
           playsinline
-          preload="metadata"
+          preload="none"
           aria-hidden="true"
         ></video>
         <video
@@ -99,6 +104,10 @@
         <canvas class="halftone-video__canvas" aria-hidden="true"></canvas>
       </div>
     </section>
+
+    <div class="section-divider section-divider--tone-earth section-divider--variant-2" data-section-divider-reveal data-tone-above="light" data-tone-below="dark" data-flip-x="true" aria-hidden="true">
+      <div class="section-divider__art"></div>
+    </div>
 
     <section class="prologue section section--tall" aria-label="Introduction">
       <div class="container container--narrow">
@@ -152,6 +161,10 @@
       </div>
     </section>
 
+    <div class="section-divider section-divider--tone-warm section-divider--variant-3" data-section-divider-reveal data-tone-above="dark" data-tone-below="light" aria-hidden="true">
+      <div class="section-divider__art"></div>
+    </div>
+
     <section class="schedule section section--dark section--tall" id="schedule" aria-labelledby="schedule-heading">
       <div class="container">
         <div class="section-header section-header--center">
@@ -162,6 +175,7 @@
           <div class="divider__thick"></div>
           <div class="divider__thin"></div>
         </div>
+        <div data-parallax="-14" data-parallax-trigger="#schedule">
         <div class="schedule-slider" id="schedule-slider" data-fade-up tabindex="0">
           <div class="schedule-slider__tabs" role="tablist" aria-label="Workshop days">
             <button class="schedule-tab is-active" type="button" role="tab" id="schedule-tab-0" aria-selected="true" aria-controls="schedule-panel-0" data-index="0">
@@ -280,8 +294,13 @@
             </button>
           </div>
         </div>
+        </div>
       </div>
     </section>
+
+    <div class="section-divider section-divider--tone-earth section-divider--variant-4" data-section-divider-reveal data-tone-above="light" data-tone-below="dark" aria-hidden="true">
+      <div class="section-divider__art"></div>
+    </div>
 
     <section class="details section section--tall" id="details" aria-labelledby="details-heading">
       <div class="container">
@@ -334,12 +353,16 @@
       </div>
     </section>
 
+    <div class="section-divider section-divider--tone-warm section-divider--variant-5 section-divider--pre-flipped" data-section-divider-reveal data-tone-above="dark" data-tone-below="light" data-flip-x="true" aria-hidden="true">
+      <div class="section-divider__art"></div>
+    </div>
+
     <section class="experience section section--earth section--tall" aria-labelledby="experience-heading">
-      <div class="experience__parallax-wrap tone-media tone-media--earth" data-parallax="0.15">
-        <img src="img/hero.jpg" alt="" class="experience__parallax-img tone-media__source" width="1920" height="1080" loading="lazy">
+      <div class="experience__parallax-wrap tone-media tone-media--earth">
+        <img src="img/hero.jpg" alt="" class="experience__parallax-img tone-media__source" width="1920" height="1080" loading="lazy" data-parallax="28" data-parallax-trigger=".experience__parallax-wrap">
         <canvas class="tone-media__map" aria-hidden="true"></canvas>
       </div>
-      <div class="container container--narrow">
+      <div class="container container--narrow" data-parallax="-10" data-parallax-trigger=".experience">
         <div class="section-header section-header--center">
           <p class="section-label" data-fade-up>Experience Noxubee Lodge</p>
           <h2 id="experience-heading" class="section-title section-title--display" data-split-lines>A Place of Renewal</h2>
@@ -350,6 +373,100 @@
         </div>
         <p class="text-fill text-fill--large text-fill--center" data-text-fill>Noxubee Lodge is more than a destination — it's a place of renewal, reflection, and artistry. This workshop invites you to slow down, observe deeply, and reconnect with both nature and creativity.</p>
         <p class="text-fill text-fill--large text-fill--center" data-text-fill>Set amid prairies and woodlands, Sumter Farm offers quiet moments of inspiration in the heart of Alabama's most beautiful prairie landscape. Whether you arrive with a professional camera or the one in your pocket, you'll leave with new ways of seeing.</p>
+      </div>
+    </section>
+
+    <div class="section-divider section-divider--tone-earth" data-section-divider-reveal data-tone-above="light" data-tone-below="dark" data-flip-x="true" aria-hidden="true">
+      <div class="section-divider__art"></div>
+    </div>
+
+    <section class="locations section section--tall" id="locations" aria-labelledby="locations-heading">
+      <div class="container">
+        <div class="section-header section-header--center">
+          <p class="section-label" data-fade-up>Workshop Locations</p>
+          <h2 id="locations-heading" class="section-title section-title--display" data-split-lines>On the Prairie</h2>
+        </div>
+        <div class="divider divider--center" data-divider-reveal>
+          <div class="divider__thick"></div>
+          <div class="divider__thin"></div>
+        </div>
+        <p class="locations__intro text-fill text-fill--center" data-text-fill>Field sessions and gatherings unfold across Sumter Farm — an 11,000-acre Black Belt landscape near Geiger, Alabama.</p>
+      </div>
+      <div class="locations__layout">
+        <div data-parallax="-22" data-parallax-trigger=".locations">
+        <div class="locations__map-wrap">
+          <iframe
+            class="locations__map"
+            title="Map of Sumter Farm workshop locations near Geiger, Alabama"
+            src="https://maps.google.com/maps?q=32.9144,-88.3033&hl=en&z=12&output=embed"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen
+          ></iframe>
+        </div>
+        </div>
+        <div class="locations__list-wrap" data-parallax="-8" data-parallax-trigger=".locations__layout">
+          <div class="locations__cycler" id="locations-cycler" aria-live="polite" aria-atomic="true">
+            <div class="locations__ring">
+              <svg class="locations__ring-svg" viewBox="0 0 200 200" aria-hidden="true">
+                <circle class="locations__ring-track" cx="100" cy="100" r="88" />
+                <circle class="locations__ring-progress" cx="100" cy="100" r="88" />
+              </svg>
+              <div class="locations__ring-content">
+                <p class="locations__travel">
+                  <span class="locations__travel-value" id="locations-travel-value">Home</span>
+                  <span class="locations__travel-label" id="locations-travel-label">from lodge</span>
+                </p>
+                <h3 class="locations__name" id="locations-cycler-name">Noxubee Lodge</h3>
+                <p class="locations__desc" id="locations-cycler-desc">Arrivals, meals, emulsion lift sessions, and evening talks</p>
+                <p class="locations__area" id="locations-cycler-area">Sumter Farm · Geiger, Alabama</p>
+              </div>
+            </div>
+            <div class="locations__index" id="locations-index" role="tablist" aria-label="Workshop locations"></div>
+          </div>
+          <ol class="locations__list locations__list--fallback">
+            <li class="locations__item">
+              <span class="locations__pin" aria-hidden="true">01</span>
+              <div class="locations__item-body">
+                <h3 class="locations__name">Noxubee Lodge</h3>
+                <p class="locations__desc">Arrivals, meals, emulsion lift sessions, and evening talks</p>
+                <p class="locations__area">Sumter Farm · Geiger, Alabama</p>
+              </div>
+            </li>
+            <li class="locations__item">
+              <span class="locations__pin" aria-hidden="true">02</span>
+              <div class="locations__item-body">
+                <h3 class="locations__name">Wild Horse Prairie</h3>
+                <p class="locations__desc">Saturday pre-breakfast walk — <em>The Art of Seeing</em></p>
+                <p class="locations__area">Sumter Farm prairie tract</p>
+              </div>
+            </li>
+            <li class="locations__item">
+              <span class="locations__pin" aria-hidden="true">03</span>
+              <div class="locations__item-body">
+                <h3 class="locations__name">Betty and Bob Prairie</h3>
+                <p class="locations__desc">Late afternoon field session on Saturday</p>
+                <p class="locations__area">Sumter Farm prairie tract</p>
+              </div>
+            </li>
+            <li class="locations__item">
+              <span class="locations__pin" aria-hidden="true">04</span>
+              <div class="locations__item-body">
+                <h3 class="locations__name">Henley Pond</h3>
+                <p class="locations__desc">Saturday afternoon walk alongside Betty and Bob Prairie</p>
+                <p class="locations__area">Sumter Farm</p>
+              </div>
+            </li>
+            <li class="locations__item">
+              <span class="locations__pin" aria-hidden="true">05</span>
+              <div class="locations__item-body">
+                <h3 class="locations__name">#2 Prairie</h3>
+                <p class="locations__desc">Sunday morning walk — light, pattern, and mood</p>
+                <p class="locations__area">Sumter Farm prairie tract</p>
+              </div>
+            </li>
+          </ol>
+        </div>
       </div>
     </section>
 
@@ -381,20 +498,23 @@
         </address>
       </div>
     </section>
+
+    <div class="section-divider section-divider--tone-warm section-divider--variant-2" data-section-divider-reveal data-tone-above="dark" data-tone-below="light" aria-hidden="true">
+      <div class="section-divider__art"></div>
+    </div>
   </main>
 
   <footer class="site-footer">
-    <div class="container site-footer__inner">
-      <div class="divider divider--center divider--wide" data-divider-reveal>
-        <div class="divider__thick"></div>
-        <div class="divider__thin"></div>
+    <div class="site-footer__inner">
+      <div class="site-footer__art" aria-hidden="true"></div>
+      <div class="container site-footer__meta">
+        <p class="site-footer__copy">&copy; 2026 Noxubee Lodge at Sumter Farm. All rights reserved.</p>
+        <p class="site-footer__links">
+          <a href="https://www.noxubeelodge.com" target="_blank" rel="noopener noreferrer">noxubeelodge.com</a>
+          <span aria-hidden="true">&middot;</span>
+          <a href="#top">Back to top</a>
+        </p>
       </div>
-      <p class="site-footer__copy">&copy; 2026 Noxubee Lodge at Sumter Farm. All rights reserved.</p>
-      <p class="site-footer__links">
-        <a href="https://www.noxubeelodge.com" target="_blank" rel="noopener noreferrer">noxubeelodge.com</a>
-        <span aria-hidden="true">&middot;</span>
-        <a href="#top">Back to top</a>
-      </p>
     </div>
   </footer>
 
@@ -404,5 +524,6 @@
   <script src="js/schedule-slider.js"></script>
   <script src="js/halftone-video.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/locations-cycler.js"></script>
 </body>
 </html>

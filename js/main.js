@@ -273,6 +273,134 @@
     });
   }
 
+  /* Scroll-linked parallax (transform-only, scrub)
+     ------------------------------------------------------------------------ */
+  function bindScrollParallax(target, options) {
+    if (!scrollTriggerAvailable || prefersReducedMotion) return;
+
+    var el = typeof target === "string" ? document.querySelector(target) : target;
+    if (!el) return;
+
+    var trigger = options.trigger
+      ? (typeof options.trigger === "string" ? document.querySelector(options.trigger) : options.trigger)
+      : el;
+    if (!trigger) return;
+
+    var tweenVars = {
+      ease: "none",
+      scrollTrigger: {
+        trigger: trigger,
+        start: options.start || "top bottom",
+        end: options.end || "bottom top",
+        scrub: options.scrub !== undefined ? options.scrub : true
+      }
+    };
+
+    if (options.yPercent !== undefined) tweenVars.yPercent = options.yPercent;
+    if (options.y !== undefined) tweenVars.y = options.y;
+    if (options.scale !== undefined) tweenVars.scale = options.scale;
+
+    gsap.to(el, tweenVars);
+  }
+
+  function initScrollParallax() {
+    if (!scrollTriggerAvailable || prefersReducedMotion) return;
+
+    document.querySelectorAll("[data-parallax]").forEach(function (el) {
+      var amount = parseFloat(el.dataset.parallax);
+      if (isNaN(amount)) return;
+
+      bindScrollParallax(el, {
+        yPercent: amount,
+        trigger: el.dataset.parallaxTrigger || el.closest("section") || el,
+        start: el.dataset.parallaxStart || "top bottom",
+        end: el.dataset.parallaxEnd || "bottom top",
+        scrub: el.dataset.parallaxScrub !== undefined ? parseFloat(el.dataset.parallaxScrub) : true
+      });
+    });
+
+    document.querySelectorAll("[data-divider-reveal]").forEach(function (divider) {
+      if (divider.closest("[data-parallax]")) return;
+      bindScrollParallax(divider, { yPercent: 10 });
+    });
+
+    document.querySelectorAll("[data-section-divider-reveal]").forEach(function (divider) {
+      if (divider.closest("[data-parallax]")) return;
+      bindScrollParallax(divider, { yPercent: 10 });
+    });
+
+    document.querySelectorAll(".section-header").forEach(function (header) {
+      if (header.closest("[data-parallax], .register__inner")) return;
+
+      bindScrollParallax(header, {
+        yPercent: -14,
+        trigger: header.closest("section") || header
+      });
+    });
+
+    document.querySelectorAll(".prologue .container, .register__inner").forEach(function (block) {
+      bindScrollParallax(block, {
+        yPercent: -10,
+        trigger: block.closest("section") || block
+      });
+    });
+
+    bindScrollParallax(".overview__highlights", {
+      yPercent: -12,
+      trigger: ".overview"
+    });
+
+    bindScrollParallax(".details__grid", {
+      yPercent: -14,
+      trigger: ".details"
+    });
+
+    bindScrollParallax(".locations__layout", {
+      yPercent: -16,
+      trigger: ".locations"
+    });
+
+    document.querySelectorAll(".overview .container--text").forEach(function (block, index) {
+      bindScrollParallax(block, {
+        yPercent: index % 2 === 0 ? -10 : -14,
+        trigger: ".overview"
+      });
+    });
+
+    bindScrollParallax(".site-footer__art", {
+      yPercent: 12,
+      trigger: ".site-footer"
+    });
+  }
+
+  function getSectionDividerFlip(divider) {
+    var preFlipped = divider.classList.contains("section-divider--pre-flipped");
+    var toneAbove = divider.getAttribute("data-tone-above");
+    var toneBelow = divider.getAttribute("data-tone-below");
+    var flipX = divider.getAttribute("data-flip-x") === "true";
+    var scaleX = flipX ? -1 : 1;
+    var scaleY = 1;
+
+    if (toneAbove === "dark" && toneBelow === "light") {
+      scaleY = preFlipped ? 1 : -1;
+    }
+
+    return { scaleX: scaleX, scaleY: scaleY };
+  }
+
+  function sectionDividerRestTransform(flip) {
+    var parts = [];
+
+    if (flip.scaleX === -1) {
+      parts.push("scaleX(-1)");
+    }
+    if (flip.scaleY === -1) {
+      parts.push("scaleY(-1)");
+    }
+
+    return parts.length ? parts.join(" ") : "none";
+  }
+
   /* Split section title lines
      ------------------------------------------------------------------------ */
   function splitTitleLines(element) {
@@ -295,12 +423,17 @@
      ------------------------------------------------------------------------ */
   function initAnimations() {
     if (prefersReducedMotion || !gsapAvailable) {
-      document.querySelectorAll("[data-fade-up], .schedule-day, .detail-card, .overview__highlights li").forEach(function (el) {
+      document.querySelectorAll("[data-fade-up], .schedule-day, .detail-card, .overview__highlights li, .locations__map-wrap, .locations__item, .locations__cycler").forEach(function (el) {
         el.style.opacity = "1";
         el.style.transform = "none";
       });
       document.querySelectorAll(".divider__thick, .divider__thin").forEach(function (el) {
         el.style.transform = "scaleX(1)";
+      });
+      document.querySelectorAll(".section-divider__art").forEach(function (el) {
+        var divider = el.closest("[data-section-divider-reveal]");
+        el.style.opacity = "1";
+        el.style.transform = divider ? sectionDividerRestTransform(getSectionDividerFlip(divider)) : "none";
       });
       initTextFillAnimations();
       return;
@@ -332,29 +465,41 @@
       delay: 0.6
     });
 
-    /* Hero parallax */
-    var heroBg = document.getElementById("hero-bg");
-    if (heroBg && scrollTriggerAvailable) {
-      gsap.to(heroBg, {
-        yPercent: 20,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".hero",
-          start: "top top",
-          end: "bottom top",
-          scrub: true
-        }
+    /* Hero parallax — layered depth (bg faster, content slower) */
+    if (scrollTriggerAvailable) {
+      bindScrollParallax("#hero-bg", {
+        yPercent: 38,
+        trigger: ".hero",
+        start: "top top",
+        end: "bottom top"
       });
 
-      gsap.to(".hero__bg img", {
-        scale: 1.15,
-        ease: "none",
-        scrollTrigger: {
-          trigger: ".hero",
-          start: "top top",
-          end: "bottom top",
-          scrub: true
-        }
+      bindScrollParallax(".hero__bg img", {
+        scale: 1.24,
+        trigger: ".hero",
+        start: "top top",
+        end: "bottom top"
+      });
+
+      bindScrollParallax(".hero__scrim", {
+        yPercent: 14,
+        trigger: ".hero",
+        start: "top top",
+        end: "bottom top"
+      });
+
+      bindScrollParallax(".hero__content", {
+        yPercent: -22,
+        trigger: ".hero",
+        start: "top top",
+        end: "bottom top"
+      });
+
+      bindScrollParallax(".hero__scroll", {
+        yPercent: -32,
+        trigger: ".hero",
+        start: "top top",
+        end: "bottom top"
       });
     }
 
@@ -407,6 +552,36 @@
           toggleActions: "play none none reverse"
         }
       });
+    });
+
+    /* Section treeline divider reveal */
+    document.querySelectorAll("[data-section-divider-reveal]").forEach(function (divider) {
+      var art = divider.querySelector(".section-divider__art");
+      if (!art) return;
+
+      var flip = getSectionDividerFlip(divider);
+
+      gsap.fromTo(
+        art,
+        {
+          scaleX: flip.scaleX,
+          scaleY: 0,
+          opacity: 0,
+          transformOrigin: "center bottom"
+        },
+        {
+          scaleX: flip.scaleX,
+          scaleY: flip.scaleY,
+          opacity: 1,
+          duration: 1.4,
+          ease: "power4.out",
+          scrollTrigger: {
+            trigger: divider,
+            start: "top 92%",
+            toggleActions: "play none none reverse"
+          }
+        }
+      );
     });
 
     /* Fade up elements */
@@ -474,20 +649,55 @@
       });
     }
 
-    /* Experience parallax image */
-    var parallaxImg = document.querySelector(".experience__parallax-img");
-    if (parallaxImg) {
-      gsap.to(parallaxImg, {
-        yPercent: 15,
-        ease: "none",
+    /* Locations map and list stagger */
+    var locationsMap = document.querySelector(".locations__map-wrap");
+    if (locationsMap) {
+      gsap.to(locationsMap, {
+        y: 0,
+        opacity: 1,
+        duration: 1,
+        ease: "power3.out",
         scrollTrigger: {
-          trigger: ".experience__parallax-wrap",
-          start: "top bottom",
-          end: "bottom top",
-          scrub: true
+          trigger: ".locations__layout",
+          start: "top 80%",
+          toggleActions: "play none none reverse"
         }
       });
     }
+
+    var locationsCycler = document.querySelector(".locations__cycler");
+    if (locationsCycler) {
+      gsap.to(locationsCycler, {
+        y: 0,
+        opacity: 1,
+        duration: 1,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".locations__list-wrap",
+          start: "top 82%",
+          toggleActions: "play none none reverse"
+        }
+      });
+    }
+
+    var locationItems = document.querySelectorAll(".locations__list--fallback .locations__item");
+    if (locationItems.length) {
+      gsap.to(locationItems, {
+        y: 0,
+        opacity: 1,
+        duration: 0.9,
+        stagger: 0.1,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: ".locations__list--fallback",
+          start: "top 82%",
+          toggleActions: "play none none reverse"
+        }
+      });
+    }
+
+    /* Scroll parallax — data-parallax attrs + section layers */
+    initScrollParallax();
 
     /* Register section */
     gsap.to(".register__actions, .register__contact", {

@@ -4,6 +4,7 @@ Pre-render the cow halftone effect to a video file for smooth playback.
 Keep grid constants in sync with js/halftone-video.js.
 
 Usage (from project root):
+  pip install opencv-python numpy imageio-ffmpeg
   python scripts/bake-halftone.py
   python scripts/bake-halftone.py --input img/cow.mp4 --output img/cow-halftone.mp4
 """
@@ -12,10 +13,12 @@ from __future__ import annotations
 
 import argparse
 import math
+import subprocess
 import sys
 from pathlib import Path
 
 import cv2
+import imageio_ffmpeg
 import numpy as np
 
 # Grid — match halftone-video.js
@@ -145,23 +148,52 @@ def render_halftone_frame(small: np.ndarray) -> np.ndarray:
 
     cols = w // CELL_W
     rows = h // CELL_H
+    if cols == 0 or rows == 0:
+        return out
+
+    crop_h = rows * CELL_H
+    crop_w = cols * CELL_W
+    crop = small[:crop_h, :crop_w].astype(np.float32)
+    b, g, r = crop[:, :, 0], crop[:, :, 1], crop[:, :, 2]
+    lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255.0
+    min_ch = np.minimum(np.minimum(r, g), b)
+    bg_dist = np.sqrt(
+        (r - bg_ref[0]) ** 2 + (g - bg_ref[1]) ** 2 + (b - bg_ref[2]) ** 2
+    )
+    is_bg = (
+        (lum >= BG_LUMINANCE)
+        | (min_ch >= BG_MIN_CHANNEL)
+        | ((bg_dist <= BG_COLOR_DISTANCE) & (lum >= 0.58))
+    )
+
+    lum_cells = lum.reshape(rows, CELL_H, cols, CELL_W)
+    bg_cells = is_bg.reshape(rows, CELL_H, cols, CELL_W)
+
+    bg_ratio = bg_cells.mean(axis=(1, 3))
+    avg_lum = lum_cells.mean(axis=(1, 3))
+    max_lum = lum_cells.max(axis=(1, 3))
+    min_lum = lum_cells.min(axis=(1, 3))
+
+    skip = (
+        (bg_ratio >= CELL_BG_RATIO)
+        | (avg_lum >= CELL_AVG_LUMINANCE)
+        | (max_lum >= 0.9)
+    )
+    darkness = 1.0 - (min_lum * 0.8 + avg_lum * 0.2)
 
     for row in range(rows):
         cell_y = row * CELL_H
         for col in range(cols):
-            cell_x = col * CELL_W
-            skip, darkness = analyze_cell(small, cell_x, cell_y, bg_ref)
-            if skip:
+            if skip[row, col]:
                 continue
 
-            bar_h = int(round(bar_height(darkness)))
+            bar_h = int(round(bar_height(float(darkness[row, col]))))
             if bar_h <= 0:
                 continue
 
-            bar_x = cell_x
+            bar_x = col * CELL_W
             bar_y = max(0, cell_y - ROW_OVERLAP)
             bar_h = min(bar_h, h - bar_y)
-
             out[bar_y : bar_y + bar_h, bar_x : bar_x + BAR_W] = FG_BGR
 
     return out
@@ -182,27 +214,60 @@ def bake(input_path: Path, output_path: Path) -> None:
     print(f"Output: {out_w}x{out_h} -> {output_path}")
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    writer = cv2.VideoWriter(str(output_path), fourcc, fps, (out_w, out_h))
-
-    if not writer.isOpened():
-        cap.release()
-        raise SystemExit(f"Could not create video writer: {output_path}")
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    cmd = [
+        ffmpeg,
+        "-y",
+        "-f",
+        "rawvideo",
+        "-vcodec",
+        "rawvideo",
+        "-pix_fmt",
+        "bgr24",
+        "-s",
+        f"{out_w}x{out_h}",
+        "-r",
+        f"{fps:.3f}",
+        "-i",
+        "-",
+        "-an",
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "-crf",
+        "22",
+        str(output_path),
+    ]
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
 
     index = 0
+    report_every = max(1, frame_count // 20) if frame_count else 30
     while True:
         ok, frame = cap.read()
         if not ok:
             break
         small = cv2.resize(frame, (out_w, out_h), interpolation=cv2.INTER_AREA)
         baked = render_halftone_frame(small)
-        writer.write(baked)
+        try:
+            proc.stdin.write(baked.tobytes())
+        except BrokenPipeError:
+            break
         index += 1
-        if index % 30 == 0 or index == frame_count:
-            print(f"  {index}/{frame_count} frames")
+        if index % report_every == 0 or index == frame_count:
+            pct = (index / frame_count * 100) if frame_count else 0
+            print(f"  {index}/{frame_count} frames ({pct:.0f}%)")
 
     cap.release()
-    writer.release()
+    if proc.stdin:
+        proc.stdin.close()
+    stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
+    return_code = proc.wait()
+    if return_code != 0:
+        raise SystemExit(f"ffmpeg failed ({return_code}):\n{stderr[-2000:]}")
+
     size_mb = output_path.stat().st_size / (1024 * 1024)
     print(f"Done — {index} frames, {size_mb:.1f} MB")
 

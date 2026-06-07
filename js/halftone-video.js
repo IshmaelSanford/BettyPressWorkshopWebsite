@@ -9,7 +9,6 @@
   /* Grid geometry — keep in sync with scripts/bake-halftone.py */
   var CELL_W = 6;
   var CELL_H = 7;
-  var BAR_W = 6;
   var ROW_OVERLAP = 2;
   var DARKNESS_THRESHOLD = 0.07;
   var DARKNESS_FULL = 0.30;
@@ -28,21 +27,36 @@
   var REF_VIEWPORT_W = 1200;
   var REF_VIEWPORT_H = 900;
 
-  /* Baked video is fixed ~1152px wide — use live canvas on phones for matching density. */
   var bakedMq = window.matchMedia("(min-width: 901px)");
+  var lowEndDevice =
+    (navigator.hardwareConcurrency || 4) <= 4 ||
+    (navigator.connection && navigator.connection.saveData);
+
+  var liveModeActive = false;
+  var bakedModeActive = false;
+  var liveStopFn = null;
 
   function shouldUseBaked() {
     return bakedMq.matches;
   }
 
   function initBakedMode(bakedVideo) {
+    if (bakedModeActive) return;
+    bakedModeActive = true;
     section.classList.add("halftone-section--baked");
 
     function setPlaying(playing) {
-      if (prefersReducedMotion) {
+      if (document.hidden) {
         bakedVideo.pause();
         return;
       }
+
+      if (prefersReducedMotion) {
+        bakedVideo.pause();
+        if (bakedVideo.readyState >= 2) bakedVideo.currentTime = 0;
+        return;
+      }
+
       if (playing) bakedVideo.play().catch(function () {});
       else bakedVideo.pause();
     }
@@ -54,15 +68,28 @@
             setPlaying(entry.isIntersecting);
           });
         },
-        { threshold: 0.15 }
+        { threshold: 0.05 }
       );
       observer.observe(section);
-    } else {
+    } else if (!prefersReducedMotion) {
       setPlaying(true);
     }
+
+    if (prefersReducedMotion && bakedVideo.readyState >= 2) {
+      bakedVideo.currentTime = 0;
+      bakedVideo.pause();
+    }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) bakedVideo.pause();
+    });
   }
 
   function initLiveMode() {
+    if (liveModeActive || bakedModeActive) return;
+    liveModeActive = true;
+    section.classList.remove("halftone-section--baked");
+
     var video = section.querySelector(".halftone-video__source");
     var canvas = section.querySelector(".halftone-video__canvas");
     if (!video || !canvas) return;
@@ -75,10 +102,13 @@
     var rows = 0;
     var cellDisplayW = CELL_W;
     var cellDisplayH = CELL_H;
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var dpr = Math.min(window.devicePixelRatio || 1, lowEndDevice ? 1.25 : 2);
+    var maxLiveWidth = lowEndDevice ? 880 : 1152;
+    var targetFrameMs = lowEndDevice ? 1000 / 20 : 1000 / 30;
     var rafId = null;
     var isActive = false;
     var sourceLoaded = false;
+    var lastFrameTime = 0;
 
     function luminance(r, g, b) {
       return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
@@ -197,23 +227,6 @@
       };
     }
 
-    function computeRefDisplaySize(vw, vh) {
-      var maxW = REF_VIEWPORT_W * MAX_STAGE_W;
-      var maxH = REF_VIEWPORT_H * MAX_STAGE_H;
-      var w = maxW;
-      var h = w * (vh / vw);
-
-      if (h > maxH) {
-        h = maxH;
-        w = h * (vw / vh);
-      }
-
-      return {
-        width: Math.max(1, Math.floor(w)),
-        height: Math.max(1, Math.floor(h))
-      };
-    }
-
     function computeDisplaySize() {
       var stage = section.querySelector(".halftone-section__stage");
       var bounds = stage ? stage.getBoundingClientRect() : section.getBoundingClientRect();
@@ -232,10 +245,15 @@
         w = h * (vw / vh);
       }
 
-      return {
-        width: Math.max(1, Math.floor(w)),
-        height: Math.max(1, Math.floor(h))
-      };
+      w = Math.max(1, Math.floor(w));
+      h = Math.max(1, Math.floor(h));
+
+      if (w > maxLiveWidth) {
+        h = Math.round(h * (maxLiveWidth / w));
+        w = maxLiveWidth;
+      }
+
+      return { width: w, height: h };
     }
 
     function resize() {
@@ -310,15 +328,23 @@
       }
     }
 
-    function tick() {
-      drawFrame();
-      if (isActive) rafId = requestAnimationFrame(tick);
+    function tick(now) {
+      if (!isActive) return;
+
+      var time = typeof now === "number" ? now : performance.now();
+      if (time - lastFrameTime >= targetFrameMs) {
+        drawFrame();
+        lastFrameTime = time;
+      }
+
+      rafId = requestAnimationFrame(tick);
     }
 
     function start() {
       if (isActive) return;
       isActive = true;
-      tick();
+      lastFrameTime = 0;
+      rafId = requestAnimationFrame(tick);
     }
 
     function stop() {
@@ -329,11 +355,14 @@
       }
     }
 
+    liveStopFn = stop;
+
     function ensureSourceLoaded() {
       if (sourceLoaded) return;
       var deferredSrc = video.getAttribute("data-src");
       if (deferredSrc && !video.getAttribute("src")) {
         video.setAttribute("src", deferredSrc);
+        video.load();
       }
       sourceLoaded = true;
     }
@@ -360,7 +389,7 @@
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
               ensureSourceLoaded();
-              if (!prefersReducedMotion) {
+              if (!prefersReducedMotion && !document.hidden) {
                 video.play().catch(function () {});
                 start();
               } else {
@@ -372,13 +401,20 @@
             }
           });
         },
-        { threshold: 0.15, rootMargin: "120px 0px" }
+        { threshold: 0.05, rootMargin: "80px 0px" }
       );
       observer.observe(section);
     } else {
       ensureSourceLoaded();
       start();
     }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        stop();
+        video.pause();
+      }
+    });
 
     var resizeTimer;
     window.addEventListener("resize", function () {
@@ -390,40 +426,81 @@
     });
   }
 
-  var bakedVideo = section.querySelector(".halftone-video__baked");
-  var bakedSrc = bakedVideo && (bakedVideo.getAttribute("src") || section.getAttribute("data-baked-src"));
+  function activateBaked(bakedVideo) {
+    if (bakedVideo.readyState >= 2) {
+      initBakedMode(bakedVideo);
+      return;
+    }
+
+    bakedVideo.addEventListener(
+      "loadeddata",
+      function () {
+        initBakedMode(bakedVideo);
+      },
+      { once: true }
+    );
+  }
 
   function startHalftone() {
-    if (bakedVideo && bakedSrc && shouldUseBaked()) {
-      if (!bakedVideo.getAttribute("src")) {
-        bakedVideo.setAttribute("src", bakedSrc);
-      }
+    var bakedVideo = section.querySelector(".halftone-video__baked");
+    var bakedSrc =
+      bakedVideo &&
+      (bakedVideo.getAttribute("data-src") ||
+        bakedVideo.getAttribute("src") ||
+        section.getAttribute("data-baked-src"));
 
-      bakedVideo.addEventListener(
-        "loadeddata",
-        function () {
-          initBakedMode(bakedVideo);
-        },
-        { once: true }
-      );
+    if (bakedVideo && bakedSrc && shouldUseBaked()) {
+      section.classList.add("halftone-section--baked");
+
+      function ensureBakedSrc() {
+        if (!bakedVideo.getAttribute("src")) {
+          bakedVideo.setAttribute("src", bakedSrc);
+          bakedVideo.load();
+        }
+        activateBaked(bakedVideo);
+      }
 
       bakedVideo.addEventListener(
         "error",
         function () {
+          bakedModeActive = false;
           section.classList.remove("halftone-section--baked");
           initLiveMode();
         },
         { once: true }
       );
-    } else {
-      initLiveMode();
+
+      if (bakedVideo.getAttribute("src")) {
+        ensureBakedSrc();
+      } else if (typeof IntersectionObserver !== "undefined") {
+        var loadObserver = new IntersectionObserver(
+          function (entries) {
+            if (entries[0].isIntersecting) {
+              loadObserver.disconnect();
+              ensureBakedSrc();
+            }
+          },
+          { rootMargin: "320px 0px", threshold: 0 }
+        );
+        loadObserver.observe(section);
+      } else {
+        ensureBakedSrc();
+      }
+
+      return;
     }
+
+    initLiveMode();
   }
 
   startHalftone();
 
   if (typeof bakedMq.addEventListener === "function") {
     bakedMq.addEventListener("change", function () {
+      if (liveStopFn) liveStopFn();
+      liveStopFn = null;
+      liveModeActive = false;
+      bakedModeActive = false;
       section.classList.remove("halftone-section--baked");
       startHalftone();
     });
