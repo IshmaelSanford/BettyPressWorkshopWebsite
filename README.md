@@ -66,7 +66,7 @@ The hero image is a placeholder from [Unsplash](https://unsplash.com/photos/gold
 This is a static site. Registration is handled via email:
 
 - **Hazel Bell** — [noxubeenews@gmail.com](mailto:noxubeenews@gmail.com)
-- **Website** — [www.noxubeelodge.com](https://www.noxubeelodge.com)
+- **Facebook** — [Noxubee Lodge on Facebook](https://www.facebook.com/NoxubeeLodge/)
 
 ## License
 
