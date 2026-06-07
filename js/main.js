@@ -114,10 +114,34 @@
   /* Split text into visual lines for scroll fill effect
      ------------------------------------------------------------------------ */
   function splitTextIntoLines(element) {
-    var originalText = element.dataset.originalText || element.textContent.trim();
-    element.dataset.originalText = originalText;
+    if (!element.dataset.originalHtml) {
+      element.dataset.originalHtml = element.innerHTML.trim();
+    }
 
-    var words = originalText.split(/\s+/);
+    var linkPlaceholders = [];
+    var source = document.createElement("div");
+    source.innerHTML = element.dataset.originalHtml;
+
+    source.querySelectorAll("a").forEach(function (anchor, index) {
+      var placeholder = "\uE000LP" + index + "\uE001";
+      linkPlaceholders.push({
+        placeholder: placeholder,
+        html: anchor.outerHTML,
+        text: anchor.textContent.trim()
+      });
+      var spaceBefore = anchor.previousSibling && anchor.previousSibling.nodeType === 3 && /\S$/.test(anchor.previousSibling.textContent) ? " " : "";
+      var spaceAfter = anchor.nextSibling && anchor.nextSibling.nodeType === 3 && /^\S/.test(anchor.nextSibling.textContent) ? " " : "";
+      anchor.replaceWith(document.createTextNode(spaceBefore + placeholder + spaceAfter));
+    });
+
+    var textWithPlaceholders = source.textContent.replace(/\s+/g, " ").trim();
+    var plainText = textWithPlaceholders;
+    linkPlaceholders.forEach(function (link) {
+      plainText = plainText.split(link.placeholder).join(link.text);
+    });
+    element.dataset.originalText = plainText;
+
+    var words = textWithPlaceholders.split(/\s+/).filter(Boolean);
     if (!words.length) return [];
 
     var styles = window.getComputedStyle(element);
@@ -140,26 +164,64 @@
     ].join(";");
     document.body.appendChild(measure);
 
+    function displayWordForToken(word) {
+      var displayWord = word;
+      linkPlaceholders.forEach(function (link) {
+        if (word === link.placeholder) displayWord = link.text;
+      });
+      return displayWord;
+    }
+
+    function wordSuffix(wordList, index) {
+      var nextWord = wordList[index + 1];
+      if (index >= wordList.length - 1) return "";
+      if (nextWord && /^[,.;:!?)]/.test(nextWord)) return "";
+      return " ";
+    }
+
+    function joinWordsForLine(lineWords) {
+      return lineWords.reduce(function (text, word, index) {
+        if (!index) return word;
+        return text + (/^[,.;:!?)]/.test(word) ? "" : " ") + word;
+      }, "");
+    }
+
+    function lineHtmlFromWords(lineWords, interactive) {
+      var lineText = joinWordsForLine(lineWords);
+      var html = lineText;
+      linkPlaceholders.forEach(function (link) {
+        if (html.indexOf(link.placeholder) !== -1) {
+          html = html.split(link.placeholder).join(
+            interactive ? link.html : "<span class=\"text-line__link\">" + link.text + "</span>"
+          );
+        }
+      });
+      return html;
+    }
+
     var wordSpans = [];
     words.forEach(function (word, index) {
       var span = document.createElement("span");
       span.style.display = "inline";
-      span.textContent = word + (index < words.length - 1 ? " " : "");
+      if (linkPlaceholders.some(function (link) { return word === link.placeholder; })) {
+        span.style.whiteSpace = "nowrap";
+      }
+      span.textContent = displayWordForToken(word) + wordSuffix(words, index);
       measure.appendChild(span);
-      wordSpans.push(span);
+      wordSpans.push({ span: span, word: word });
     });
 
     var lineGroups = [];
     var currentLine = [];
     var lastTop = null;
 
-    wordSpans.forEach(function (span) {
-      var top = span.offsetTop;
+    wordSpans.forEach(function (item) {
+      var top = item.span.offsetTop;
       if (lastTop !== null && Math.abs(top - lastTop) > 2) {
         lineGroups.push(currentLine);
         currentLine = [];
       }
-      currentLine.push(span.textContent);
+      currentLine.push(item.word);
       lastTop = top;
     });
 
@@ -167,13 +229,11 @@
     document.body.removeChild(measure);
 
     element.textContent = "";
-    element.setAttribute("aria-label", originalText);
+    element.setAttribute("aria-label", plainText);
 
     var lineElements = [];
 
     lineGroups.forEach(function (lineWords) {
-      var lineText = lineWords.join("").replace(/\s+/g, " ").trim();
-
       var line = document.createElement("span");
       line.className = "text-line";
 
@@ -182,12 +242,23 @@
 
       var ghost = document.createElement("span");
       ghost.className = "text-line__ghost";
-      ghost.textContent = lineText;
       ghost.setAttribute("aria-hidden", "true");
 
       var fill = document.createElement("span");
       fill.className = "text-line__fill";
-      fill.textContent = lineText;
+
+      if (linkPlaceholders.length) {
+        ghost.innerHTML = lineHtmlFromWords(lineWords, true);
+        fill.innerHTML = lineHtmlFromWords(lineWords, false);
+      } else {
+        var lineText = lineWords.reduce(function (text, word, index) {
+          var displayWord = displayWordForToken(word);
+          if (!index) return displayWord;
+          return text + (/^[,.;:!?)]/.test(word) ? "" : " ") + displayWord;
+        }, "");
+        ghost.textContent = lineText;
+        fill.textContent = lineText;
+      }
 
       wrap.appendChild(ghost);
       wrap.appendChild(fill);
@@ -248,7 +319,10 @@
     }
 
     document.querySelectorAll("[data-text-fill]").forEach(function (block) {
-      if (block.dataset.originalText) {
+      if (block.dataset.originalHtml) {
+        block.innerHTML = block.dataset.originalHtml;
+        block.dataset.linesSplit = "false";
+      } else if (block.dataset.originalText) {
         block.textContent = block.dataset.originalText;
         block.dataset.linesSplit = "false";
       }

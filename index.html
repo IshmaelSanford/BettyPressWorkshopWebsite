@@ -43,7 +43,7 @@
         <a href="#schedule">Schedule</a>
         <a href="#details">Details</a>
         <a href="#locations">Locations</a>
-        <a href="#register" class="site-nav__cta">Register</a>
+        <a href="#" class="site-nav__cta" data-register-open>Register</a>
       </nav>
     </div>
   </header>
@@ -63,7 +63,7 @@
         </h1>
         <p class="hero__subtitle" data-fade-up>A Weekend of Art, Nature, and Creative Discovery</p>
         <p class="hero__meta" data-fade-up>Led by Betty Press · August 28–30, 2026</p>
-        <a class="btn btn--primary btn--magnetic" href="#register" data-fade-up>
+        <a class="btn btn--primary btn--magnetic" href="#" data-register-open data-fade-up>
           <span class="btn__text">Register Your Place</span>
           <span class="btn__bg"></span>
         </a>
@@ -135,7 +135,7 @@
         </div>
       </div>
       <div class="container container--text">
-        <p class="text-fill text-fill--large text-fill--center" data-text-fill>Join us for a weekend of art, learning, and reflection at Noxubee Lodge, led by acclaimed photographer Betty Press. Set amid the prairies and woodlands of Sumter Farm, this immersive workshop explores the art of seeing through the lens — whether with a professional camera or the one you carry every day.</p>
+        <p class="text-fill text-fill--large text-fill--center" data-text-fill>Join us for a weekend of art, learning, and reflection at Noxubee Lodge, led by acclaimed photographer <a href="https://www.bettypress.com/index" target="_blank" rel="noopener noreferrer">Betty Press</a>. Set amid the prairies and woodlands of Sumter Farm, this immersive workshop explores the art of seeing through the lens — whether with a professional camera or the one you carry every day.</p>
       </div>
       <div class="container container--text">
         <p class="text-fill text-fill--large text-fill--center" data-text-fill>Participants will learn to capture natural light, texture, and mood; experiment with composition; and create an emulsion lift artwork to take home. This unique event blends field sessions, indoor creative time, and moments of quiet inspiration within Alabama's most beautiful prairie landscape.</p>
@@ -216,7 +216,7 @@
                 </li>
                 <li>
                   <time datetime="2026-08-28T19:00">Evening</time>
-                  <span>Talk by Betty Press: <em>Using the Camera in Isolation — What We Can Do in the Field</em></span>
+                  <span>Talk by <a href="https://www.bettypress.com/index" target="_blank" rel="noopener noreferrer">Betty Press</a>: <em>Using the Camera in Isolation — What We Can Do in the Field</em></span>
                 </li>
                 <li>
                   <time>Evening</time>
@@ -325,7 +325,7 @@
           </div>
           <div class="detail-card" data-fade-up>
             <h3 class="detail-card__title">Instructor</h3>
-            <p class="detail-card__value">Betty Press</p>
+            <p class="detail-card__value"><a href="https://www.bettypress.com/index" target="_blank" rel="noopener noreferrer">Betty Press</a></p>
             <p class="detail-card__note">Acclaimed photographer</p>
           </div>
           <div class="detail-card" data-fade-up>
@@ -482,10 +482,10 @@
         </div>
         <p class="text-fill text-fill--large text-fill--center" data-text-fill>Spaces are limited to 12 participants. For registration and more information, please contact Hazel Bell.</p>
         <div class="register__actions" data-fade-up>
-          <a class="btn btn--primary btn--magnetic" href="mailto:noxubeenews@gmail.com?subject=Noxubee%20Photography%20Workshop%20Registration">
-            <span class="btn__text">Email to Register</span>
+          <button type="button" class="btn btn--primary btn--magnetic" data-register-open>
+            <span class="btn__text">Register</span>
             <span class="btn__bg"></span>
-          </a>
+          </button>
           <a class="btn btn--outline btn--magnetic" href="https://www.noxubeelodge.com" target="_blank" rel="noopener noreferrer">
             <span class="btn__text">Visit Noxubee Lodge</span>
             <span class="btn__bg"></span>
@@ -493,7 +493,7 @@
         </div>
         <address class="register__contact" data-fade-up>
           <p><strong>Hazel Bell</strong></p>
-          <p><a href="mailto:noxubeenews@gmail.com">noxubeenews@gmail.com</a></p>
+          <p><a href="mailto:noxubeenews@gmail.com" data-contact-open>noxubeenews@gmail.com</a></p>
           <p><a href="https://www.noxubeelodge.com" target="_blank" rel="noopener noreferrer">www.noxubeelodge.com</a></p>
         </address>
       </div>
@@ -503,6 +503,48 @@
       <div class="section-divider__art"></div>
     </div>
   </main>
+
+  <div class="contact-modal" id="contact-modal" hidden aria-hidden="true">
+    <div class="contact-modal__backdrop" data-contact-close tabindex="-1"></div>
+    <div
+      class="contact-modal__dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="contact-modal-title"
+      tabindex="-1"
+    >
+      <button type="button" class="contact-modal__close" data-contact-close aria-label="Close contact form">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      <p class="contact-modal__label">Contact</p>
+      <h2 class="contact-modal__title" id="contact-modal-title">Send an Inquiry</h2>
+      <p class="contact-modal__intro">Send a message to Hazel Bell about the Noxubee Lodge photography workshop.</p>
+      <form class="contact-modal__form" id="contact-form" novalidate>
+        <div class="contact-modal__field">
+          <label class="contact-modal__field-label" for="contact-name">Name <span class="contact-modal__optional">(optional)</span></label>
+          <input class="contact-modal__input" type="text" id="contact-name" name="name" autocomplete="name">
+        </div>
+        <div class="contact-modal__field">
+          <label class="contact-modal__field-label" for="contact-email">Email <span class="contact-modal__optional">(optional)</span></label>
+          <input class="contact-modal__input" type="email" id="contact-email" name="email" autocomplete="email">
+        </div>
+        <div class="contact-modal__field">
+          <label class="contact-modal__field-label" for="contact-message">Message</label>
+          <textarea class="contact-modal__textarea" id="contact-message" name="message" rows="5">I'd like to inquire about the Noxubee Lodge photography workshop led by Betty Press (August 28–30, 2026).</textarea>
+        </div>
+        <div class="contact-modal__actions">
+          <button type="submit" class="btn btn--primary btn--magnetic">
+            <span class="btn__text">Send Email</span>
+            <span class="btn__bg"></span>
+          </button>
+          <button type="button" class="btn btn--outline btn--magnetic" data-contact-close>
+            <span class="btn__text">Cancel</span>
+            <span class="btn__bg"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <footer class="site-footer">
     <div class="site-footer__inner">
@@ -524,6 +566,8 @@
   <script src="js/schedule-slider.js"></script>
   <script src="js/halftone-video.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/register.js"></script>
+  <script src="js/contact-modal.js"></script>
   <script src="js/locations-cycler.js"></script>
 </body>
 </html>
